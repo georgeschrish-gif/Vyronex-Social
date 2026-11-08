@@ -18,8 +18,59 @@ import { VyronexBrand } from '@/components/VyronexBrand';
 import { useColors } from '@/hooks/useColors';
 
 type AuthMode = 'login' | 'register';
-type FieldKey = 'name' | 'email' | 'password' | 'confirm';
+type FieldKey =
+  | 'firstName'
+  | 'lastName'
+  | 'birthDate'
+  | 'contact'
+  | 'password'
+  | 'confirm';
 type FieldErrors = Partial<Record<FieldKey, string>>;
+type SexOption = 'Femme' | 'Homme' | 'Autre' | 'Je préfère ne pas répondre';
+
+const sexOptions: SexOption[] = [
+  'Femme',
+  'Homme',
+  'Autre',
+  'Je préfère ne pas répondre',
+];
+
+function formatBirthDate(value: string) {
+  const digits = value.replace(/\D/g, '').slice(0, 8);
+  if (digits.length <= 2) return digits;
+  if (digits.length <= 4) return `${digits.slice(0, 2)}/${digits.slice(2)}`;
+  return `${digits.slice(0, 2)}/${digits.slice(2, 4)}/${digits.slice(4)}`;
+}
+
+function isValidBirthDate(value: string) {
+  const match = /^(\d{2})\/(\d{2})\/(\d{4})$/.exec(value);
+  if (!match) return false;
+
+  const day = Number(match[1]);
+  const month = Number(match[2]);
+  const year = Number(match[3]);
+  const date = new Date(year, month - 1, day);
+  const isRealDate =
+    date.getFullYear() === year &&
+    date.getMonth() === month - 1 &&
+    date.getDate() === day;
+  return isRealDate && date <= new Date();
+}
+
+function isValidEmail(value: string) {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
+}
+
+function isValidPhoneOrEmail(value: string) {
+  if (isValidEmail(value)) return true;
+
+  const digits = value.replace(/\D/g, '');
+  return (
+    /^\+?[\d\s().-]+$/.test(value) &&
+    digits.length >= 7 &&
+    digits.length <= 15
+  );
+}
 
 type FieldProps = {
   label: string;
@@ -108,8 +159,11 @@ export function AuthFlow({ mode }: { mode: AuthMode }) {
   const topInset = Platform.OS === 'web' ? 67 : insets.top;
   const bottomInset = Platform.OS === 'web' ? 34 : insets.bottom;
   const isRegister = mode === 'register';
-  const [name, setName] = useState('');
-  const [email, setEmail] = useState('');
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
+  const [birthDate, setBirthDate] = useState('');
+  const [sex, setSex] = useState<SexOption | null>(null);
+  const [contact, setContact] = useState('');
   const [password, setPassword] = useState('');
   const [confirm, setConfirm] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -147,13 +201,25 @@ export function AuthFlow({ mode }: { mode: AuthMode }) {
 
   const submit = () => {
     const nextErrors: FieldErrors = {};
-    const normalizedEmail = email.trim();
+    const normalizedContact = contact.trim();
 
-    if (isRegister && name.trim().length < 2) {
-      nextErrors.name = 'Saisissez un nom d’utilisateur (2 caractères minimum).';
+    if (isRegister && !firstName.trim()) {
+      nextErrors.firstName = 'Saisissez votre prénom.';
     }
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalizedEmail)) {
-      nextErrors.email = 'Saisissez une adresse e-mail valide.';
+    if (isRegister && !lastName.trim()) {
+      nextErrors.lastName = 'Saisissez votre nom.';
+    }
+    if (isRegister && !isValidBirthDate(birthDate)) {
+      nextErrors.birthDate =
+        'Saisissez une date valide au format JJ/MM/AAAA.';
+    }
+    const validContact = isRegister
+      ? isValidPhoneOrEmail(normalizedContact)
+      : isValidEmail(normalizedContact);
+    if (!validContact) {
+      nextErrors.contact = isRegister
+        ? 'Saisissez un e-mail ou un numéro de téléphone valide.'
+        : 'Saisissez une adresse e-mail valide.';
     }
     if (password.length < 8) {
       nextErrors.password = 'Le mot de passe doit contenir au moins 8 caractères.';
@@ -173,7 +239,9 @@ export function AuthFlow({ mode }: { mode: AuthMode }) {
 
     Keyboard.dismiss();
     setNotice(
-      'Maquette uniquement : aucune donnée n’a été envoyée ni enregistrée.',
+      isRegister
+        ? 'Champs validés. Cette maquette ne crée pas de compte et ne transmet aucune donnée.'
+        : 'Maquette uniquement : aucune donnée n’a été envoyée ni enregistrée.',
     );
     if (Platform.OS !== 'web') {
       void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
@@ -226,35 +294,131 @@ export function AuthFlow({ mode }: { mode: AuthMode }) {
 
         <View style={styles.form}>
           {isRegister ? (
-            <FormField
-              label="Nom d’utilisateur"
-              placeholder="Votre nom"
-              value={name}
-              onChangeText={(value) => {
-                setName(value);
-                if (errors.name) setErrors((current) => ({ ...current, name: undefined }));
-              }}
-              error={errors.name}
-              autoCapitalize="none"
-              autoComplete="username"
-              testID="username-input"
-              returnKeyType="next"
-            />
+            <>
+              <FormField
+                label="Prénom"
+                placeholder="Votre prénom"
+                value={firstName}
+                onChangeText={(value) => {
+                  setFirstName(value);
+                  if (errors.firstName) {
+                    setErrors((current) => ({ ...current, firstName: undefined }));
+                  }
+                }}
+                error={errors.firstName}
+                autoCapitalize="words"
+                autoComplete="given-name"
+                testID="first-name-input"
+                returnKeyType="next"
+              />
+              <FormField
+                label="Nom"
+                placeholder="Votre nom"
+                value={lastName}
+                onChangeText={(value) => {
+                  setLastName(value);
+                  if (errors.lastName) {
+                    setErrors((current) => ({ ...current, lastName: undefined }));
+                  }
+                }}
+                error={errors.lastName}
+                autoCapitalize="words"
+                autoComplete="family-name"
+                testID="last-name-input"
+                returnKeyType="next"
+              />
+              <FormField
+                label="Date de naissance"
+                placeholder="JJ/MM/AAAA"
+                value={birthDate}
+                onChangeText={(value) => {
+                  setBirthDate(formatBirthDate(value));
+                  if (errors.birthDate) {
+                    setErrors((current) => ({ ...current, birthDate: undefined }));
+                  }
+                }}
+                error={errors.birthDate}
+                autoCapitalize="none"
+                keyboardType="number-pad"
+                testID="birth-date-input"
+                returnKeyType="next"
+              />
+              <View style={styles.sexSection}>
+                <Text
+                  style={[
+                    styles.fieldLabel,
+                    { color: colors.secondaryForeground },
+                  ]}
+                >
+                  Sexe <Text style={{ color: colors.mutedForeground }}>(facultatif)</Text>
+                </Text>
+                <View style={styles.sexOptions}>
+                  {sexOptions.map((option) => {
+                    const selected = sex === option;
+                    return (
+                      <Pressable
+                        key={option}
+                        testID={`sex-option-${option}`}
+                        accessibilityRole="radio"
+                        accessibilityState={{ selected }}
+                        accessibilityLabel={option}
+                        onPress={() => setSex(option)}
+                        style={({ pressed }) => [
+                          styles.sexOption,
+                          {
+                            borderColor: selected ? colors.primary : colors.border,
+                            backgroundColor: selected ? colors.secondary : colors.input,
+                          },
+                          pressed && styles.pressed,
+                        ]}
+                      >
+                        <Text
+                          numberOfLines={2}
+                          style={[
+                            styles.sexOptionText,
+                            {
+                              color: selected
+                                ? colors.foreground
+                                : colors.mutedForeground,
+                            },
+                          ]}
+                        >
+                          {option}
+                        </Text>
+                        {selected ? (
+                          <Feather
+                            name="check"
+                            size={15}
+                            color={colors.primary}
+                          />
+                        ) : null}
+                      </Pressable>
+                    );
+                  })}
+                </View>
+              </View>
+            </>
           ) : null}
 
           <FormField
-            label="Adresse e-mail"
-            placeholder="nom@exemple.com"
-            value={email}
+            label={isRegister ? 'Téléphone ou adresse e-mail' : 'Adresse e-mail'}
+            placeholder={
+              isRegister
+                ? 'Ex. nom@exemple.com ou +...'
+                : 'nom@exemple.com'
+            }
+            value={contact}
             onChangeText={(value) => {
-              setEmail(value);
-              if (errors.email) setErrors((current) => ({ ...current, email: undefined }));
+              setContact(value);
+              if (errors.contact) {
+                setErrors((current) => ({ ...current, contact: undefined }));
+              }
             }}
-            error={errors.email}
+            error={errors.contact}
             autoCapitalize="none"
-            autoComplete="email"
-            keyboardType="email-address"
-            testID="email-input"
+            autoComplete={isRegister ? 'off' : 'email'}
+            keyboardType={isRegister ? 'default' : 'email-address'}
+            testID={isRegister ? 'contact-input' : 'email-input'}
             returnKeyType="next"
           />
 
@@ -326,7 +490,7 @@ export function AuthFlow({ mode }: { mode: AuthMode }) {
             ]}
           >
             <Text style={[styles.submitText, { color: colors.primaryForeground }]}>
-              {isRegister ? 'Créer mon compte' : 'Se connecter'}
+              {isRegister ? 'Continuer' : 'Se connecter'}
             </Text>
             <Feather
               name="arrow-up-right"
@@ -389,8 +553,8 @@ const styles = StyleSheet.create({
     width: 44,
   },
   intro: {
-    marginTop: 40,
-    marginBottom: 28,
+    marginTop: 30,
+    marginBottom: 24,
   },
   eyebrow: {
     fontFamily: 'Inter_600SemiBold',
@@ -411,7 +575,7 @@ const styles = StyleSheet.create({
     lineHeight: 21,
   },
   form: {
-    gap: 18,
+    gap: 16,
   },
   fieldWrap: {
     gap: 8,
@@ -419,6 +583,32 @@ const styles = StyleSheet.create({
   fieldLabel: {
     fontFamily: 'Inter_500Medium',
     fontSize: 13,
+  },
+  sexSection: {
+    gap: 9,
+  },
+  sexOptions: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  sexOption: {
+    width: '48%',
+    minHeight: 44,
+    borderRadius: 13,
+    borderWidth: 1,
+    paddingHorizontal: 11,
+    paddingVertical: 8,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 6,
+  },
+  sexOptionText: {
+    flex: 1,
+    fontFamily: 'Inter_500Medium',
+    fontSize: 11,
+    lineHeight: 15,
   },
   inputFrame: {
     minHeight: 56,
