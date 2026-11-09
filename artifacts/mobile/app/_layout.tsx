@@ -6,6 +6,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { useColors } from '@/hooks/useColors';
+import { RegistrationProvider } from '@/context/RegistrationContext';
 import {
   Inter_400Regular,
   Inter_500Medium,
@@ -36,6 +37,9 @@ function RootLayoutNav() {
         <Stack.Screen name="index" />
         <Stack.Screen name="login" />
         <Stack.Screen name="register" />
+        <Stack.Screen name="register-about" />
+        <Stack.Screen name="register-contact" />
+        <Stack.Screen name="register-password" />
       </Stack>
     </>
   );
@@ -63,7 +67,9 @@ export default function RootLayout() {
         <QueryClientProvider client={queryClient}>
           <GestureHandlerRootView>
             <KeyboardProvider>
-              <RootLayoutNav />
+              <RegistrationProvider>
+                <RootLayoutNav />
+              </RegistrationProvider>
             </KeyboardProvider>
           </GestureHandlerRootView>
         </QueryClientProvider>

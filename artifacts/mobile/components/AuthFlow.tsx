@@ -72,7 +72,7 @@ function isValidPhoneOrEmail(value: string) {
   );
 }
 
-type FieldProps = {
+export type FormFieldProps = {
   label: string;
   value: string;
   onChangeText: (value: string) => void;
@@ -88,7 +88,7 @@ type FieldProps = {
   accessory?: React.ReactNode;
 };
 
-function FormField({
+export function FormField({
   label,
   value,
   onChangeText,
@@ -102,7 +102,7 @@ function FormField({
   returnKeyType,
   onSubmitEditing,
   accessory,
-}: FieldProps) {
+}: FormFieldProps) {
   const colors = useColors();
   const [focused, setFocused] = useState(false);
 

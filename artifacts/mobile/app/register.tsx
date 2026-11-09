@@ -1,5 +1,5 @@
-import { AuthFlow } from '@/components/AuthFlow';
+import { SignupStep } from '@/components/SignupStep';
 
 export default function RegisterScreen() {
-  return <AuthFlow mode="register" />;
+  return <SignupStep page="identity" />;
 }
