@@ -20,6 +20,7 @@ export type RegistrationData = {
   contact: string;
   password: string;
   confirm: string;
+  profilePhotoUri: string | null;
 };
 
 type RegistrationContextValue = {
@@ -38,6 +39,7 @@ const emptyRegistration: RegistrationData = {
   contact: '',
   password: '',
   confirm: '',
+  profilePhotoUri: null,
 };
 
 const RegistrationContext = createContext<RegistrationContextValue | null>(null);

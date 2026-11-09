@@ -31,15 +31,20 @@ function RootLayoutNav() {
       <Stack
         screenOptions={{
           headerShown: false,
+          animation: 'slide_from_right',
           contentStyle: { backgroundColor: colors.background },
         }}
       >
         <Stack.Screen name="index" />
         <Stack.Screen name="login" />
         <Stack.Screen name="register" />
+        <Stack.Screen name="register-name" />
         <Stack.Screen name="register-about" />
+        <Stack.Screen name="register-sex" />
         <Stack.Screen name="register-contact" />
         <Stack.Screen name="register-password" />
+        <Stack.Screen name="register-confirm" />
+        <Stack.Screen name="register-photo" />
       </Stack>
     </>
   );
