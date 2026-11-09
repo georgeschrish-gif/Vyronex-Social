@@ -34,7 +34,8 @@ type SignupPage =
   | 'contact'
   | 'password'
   | 'confirm'
-  | 'photo';
+  | 'photo'
+  | 'friends';
 type FieldKey = keyof RegistrationData;
 type FieldErrors = Partial<Record<FieldKey, string>>;
 
@@ -53,7 +54,8 @@ const nextRoutes: Record<SignupPage, Href | null> = {
   contact: '/register-password',
   password: '/register-confirm',
   confirm: '/register-photo',
-  photo: null,
+  photo: '/register-friends',
+  friends: null,
 };
 
 const previousRoutes: Record<SignupPage, Href> = {
@@ -65,7 +67,29 @@ const previousRoutes: Record<SignupPage, Href> = {
   password: '/register-contact',
   confirm: '/register-password',
   photo: '/register-confirm',
+  friends: '/register-photo',
 };
+
+const friendSuggestions = [
+  {
+    id: 'maya-diallo',
+    name: 'Maya Diallo',
+    initials: 'MD',
+    interest: 'Création & culture',
+  },
+  {
+    id: 'ibrahima-camara',
+    name: 'Ibrahima Camara',
+    initials: 'IC',
+    interest: 'Technologie & idées',
+  },
+  {
+    id: 'aissatou-bah',
+    name: 'Aïssatou Bah',
+    initials: 'AB',
+    interest: 'Voyages & découvertes',
+  },
+];
 
 const pageCopy: Record<SignupPage, { title: string; subtitle: string }> = {
   firstName: {
@@ -99,6 +123,10 @@ const pageCopy: Record<SignupPage, { title: string; subtitle: string }> = {
   photo: {
     title: 'Photo de profil',
     subtitle: 'Ajoutez une image pour personnaliser votre profil.',
+  },
+  friends: {
+    title: 'Trouver vos amis',
+    subtitle: 'Découvrez des profils à suivre et commencez votre cercle.',
   },
 };
 
@@ -142,7 +170,8 @@ function isValidPhoneOrEmail(value: string) {
 export function SignupStep({ page }: { page: SignupPage }) {
   const colors = useColors();
   const insets = useSafeAreaInsets();
-  const { data, updateField } = useRegistration();
+  const { data, followedSuggestionIds, updateField, toggleFollow } =
+    useRegistration();
   const [errors, setErrors] = useState<FieldErrors>({});
   const [notice, setNotice] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -205,11 +234,6 @@ export function SignupStep({ page }: { page: SignupPage }) {
         nextErrors.confirm = 'Les mots de passe ne correspondent pas.';
       }
     }
-    if (page === 'photo' && !data.profilePhotoUri) {
-      nextErrors.profilePhotoUri =
-        'Ajoutez une photo ou passez cette étape.';
-    }
-
     setErrors(nextErrors);
     if (Object.keys(nextErrors).length > 0) {
       if (Platform.OS !== 'web') {
@@ -218,7 +242,7 @@ export function SignupStep({ page }: { page: SignupPage }) {
       return;
     }
 
-    if (page === 'photo') {
+    if (page === 'friends') {
       finishMockRegistration();
       return;
     }
@@ -365,6 +389,91 @@ export function SignupStep({ page }: { page: SignupPage }) {
       <Feather name="chevron-right" size={19} color={colors.mutedForeground} />
     </Pressable>
   );
+
+  const continueToFriends = () => {
+    Keyboard.dismiss();
+    setErrors({});
+    if (Platform.OS !== 'web') void Haptics.selectionAsync();
+    router.replace('/register-friends');
+  };
+
+  const renderSuggestion = (suggestion: (typeof friendSuggestions)[number]) => {
+    const isFollowing = followedSuggestionIds.includes(suggestion.id);
+
+    return (
+      <View
+        key={suggestion.id}
+        testID={`friend-suggestion-${suggestion.id}`}
+        style={[
+          styles.suggestionCard,
+          {
+            borderColor: colors.border,
+            backgroundColor: colors.card,
+            borderRadius: colors.radius - 4,
+          },
+        ]}
+      >
+        <View
+          style={[
+            styles.suggestionAvatar,
+            {
+              backgroundColor: colors.secondary,
+              borderColor: colors.accent,
+            },
+          ]}
+        >
+          <Text style={[styles.suggestionInitials, { color: colors.accent }]}>
+            {suggestion.initials}
+          </Text>
+        </View>
+        <View style={styles.suggestionCopy}>
+          <Text style={[styles.suggestionName, { color: colors.foreground }]}>
+            {suggestion.name}
+          </Text>
+          <Text
+            style={[
+              styles.suggestionInterest,
+              { color: colors.mutedForeground },
+            ]}
+          >
+            {suggestion.interest}
+          </Text>
+        </View>
+        <Pressable
+          testID={`follow-suggestion-${suggestion.id}`}
+          accessibilityRole="button"
+          accessibilityLabel={
+            isFollowing
+              ? `Retirer ${suggestion.name} de vos abonnements`
+              : `Ajouter ${suggestion.name}`
+          }
+          accessibilityState={{ selected: isFollowing }}
+          disabled={!!notice}
+          onPress={() => {
+            toggleFollow(suggestion.id);
+            if (Platform.OS !== 'web') void Haptics.selectionAsync();
+          }}
+          style={({ pressed }) => [
+            styles.addButton,
+            {
+              borderColor: isFollowing ? colors.accent : colors.primary,
+              backgroundColor: isFollowing ? colors.secondary : 'transparent',
+            },
+            pressed && styles.pressed,
+          ]}
+        >
+          <Text
+            style={[
+              styles.addButtonText,
+              { color: isFollowing ? colors.accent : colors.primary },
+            ]}
+          >
+            {isFollowing ? 'Ajouté' : 'Ajouter'}
+          </Text>
+        </Pressable>
+      </View>
+    );
+  };
 
   return (
     <View style={[styles.screen, { backgroundColor: colors.background }]}>
@@ -628,14 +737,21 @@ export function SignupStep({ page }: { page: SignupPage }) {
                 'photo-camera-button',
                 () => void chooseProfilePhoto('camera'),
               )}
-              {errors.profilePhotoUri ? (
-                <Text
-                  style={[styles.errorText, { color: colors.destructive }]}
-                >
-                  {errors.profilePhotoUri}
-                </Text>
-              ) : null}
             </>
+          ) : null}
+
+          {page === 'friends' ? (
+            <View style={styles.suggestionsList}>
+              <Text
+                style={[
+                  styles.suggestionsLabel,
+                  { color: colors.accent },
+                ]}
+              >
+                Suggestions
+              </Text>
+              {friendSuggestions.map(renderSuggestion)}
+            </View>
           ) : null}
 
           {notice ? (
@@ -660,13 +776,30 @@ export function SignupStep({ page }: { page: SignupPage }) {
           <Pressable
             testID="skip-photo-button"
             accessibilityRole="button"
-            onPress={finishMockRegistration}
+            onPress={continueToFriends}
             disabled={isPickingPhoto}
             style={({ pressed }) => [
               styles.skipButton,
               { borderColor: colors.border },
               pressed && styles.pressed,
               isPickingPhoto && styles.disabled,
+            ]}
+          >
+            <Text style={[styles.skipText, { color: colors.mutedForeground }]}>
+              Passer cette étape
+            </Text>
+          </Pressable>
+        ) : null}
+
+        {page === 'friends' && !notice ? (
+          <Pressable
+            testID="skip-friends-button"
+            accessibilityRole="button"
+            onPress={finishMockRegistration}
+            style={({ pressed }) => [
+              styles.skipButton,
+              { borderColor: colors.border },
+              pressed && styles.pressed,
             ]}
           >
             <Text style={[styles.skipText, { color: colors.mutedForeground }]}>
@@ -830,6 +963,65 @@ const styles = StyleSheet.create({
     fontFamily: 'Inter_500Medium',
     fontSize: 13,
     lineHeight: 18,
+  },
+  suggestionsList: {
+    gap: 10,
+  },
+  suggestionsLabel: {
+    marginBottom: 2,
+    fontFamily: 'Inter_600SemiBold',
+    fontSize: 11,
+    letterSpacing: 1.4,
+    textTransform: 'uppercase',
+  },
+  suggestionCard: {
+    minHeight: 74,
+    borderWidth: 1,
+    paddingHorizontal: 11,
+    paddingVertical: 10,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  suggestionAvatar: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  suggestionInitials: {
+    fontFamily: 'Inter_600SemiBold',
+    fontSize: 12,
+    letterSpacing: 0.5,
+  },
+  suggestionCopy: {
+    flex: 1,
+    gap: 3,
+  },
+  suggestionName: {
+    fontFamily: 'Inter_600SemiBold',
+    fontSize: 13,
+    lineHeight: 18,
+  },
+  suggestionInterest: {
+    fontFamily: 'Inter_400Regular',
+    fontSize: 11,
+    lineHeight: 15,
+  },
+  addButton: {
+    minWidth: 72,
+    minHeight: 36,
+    borderWidth: 1,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 9,
+  },
+  addButtonText: {
+    fontFamily: 'Inter_600SemiBold',
+    fontSize: 12,
   },
   skipButton: {
     alignSelf: 'center',

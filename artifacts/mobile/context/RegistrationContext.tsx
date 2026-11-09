@@ -25,10 +25,12 @@ export type RegistrationData = {
 
 type RegistrationContextValue = {
   data: RegistrationData;
+  followedSuggestionIds: string[];
   updateField: <K extends keyof RegistrationData>(
     key: K,
     value: RegistrationData[K],
   ) => void;
+  toggleFollow: (suggestionId: string) => void;
 };
 
 const emptyRegistration: RegistrationData = {
@@ -46,14 +48,32 @@ const RegistrationContext = createContext<RegistrationContextValue | null>(null)
 
 export function RegistrationProvider({ children }: { children: ReactNode }) {
   const [data, setData] = useState<RegistrationData>(emptyRegistration);
+  const [followedSuggestionIds, setFollowedSuggestionIds] = useState<string[]>(
+    [],
+  );
 
   const updateField: RegistrationContextValue['updateField'] = (key, value) => {
     setData((current) => ({ ...current, [key]: value }));
   };
 
+  const toggleFollow: RegistrationContextValue['toggleFollow'] = (
+    suggestionId,
+  ) => {
+    setFollowedSuggestionIds((current) =>
+      current.includes(suggestionId)
+        ? current.filter((id) => id !== suggestionId)
+        : [...current, suggestionId],
+    );
+  };
+
   const contextValue = useMemo(
-    () => ({ data, updateField }),
-    [data],
+    () => ({
+      data,
+      followedSuggestionIds,
+      updateField,
+      toggleFollow,
+    }),
+    [data, followedSuggestionIds],
   );
 
   return (

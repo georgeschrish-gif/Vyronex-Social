@@ -45,6 +45,7 @@ function RootLayoutNav() {
         <Stack.Screen name="register-password" />
         <Stack.Screen name="register-confirm" />
         <Stack.Screen name="register-photo" />
+        <Stack.Screen name="register-friends" />
       </Stack>
     </>
   );
