@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Vyronex - Accueil</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;font-family:Arial}
+body{background:#f0f2f5}
+.top{background:white;padding:12px 15px;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;box-shadow:0 1px 5px #ddd}
+.logo{font-size:26px;font-weight:900;color:#1877F2}
+.logo span{color:#00C853}
+.top button{background:#1877F2;color:white;border:none;padding:8px 14px;border-radius:20px;font-weight:bold}
+.wrap{max-width:500px;margin:auto;padding:12px}
+.card{background:white;border-radius:12px;padding:14px;margin-bottom:12px;box-shadow:0 1px 3px #ddd}
+.profil{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+.ava{width:45px;height:45px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:white;font-weight:bold;font-size:20px}
+.name{font-weight:bold}
+.time{font-size:12px;color:gray}
+.post-img{width:100%;border-radius:10px;margin:10px 0}
+.actions{display:flex;justify-content:space-between;border-top:1px solid #eee;padding-top:10px}
+.actions button{border:none;background:none;font-size:15px;font-weight:bold;cursor:pointer}
+.actions button.liked{color:#1877F2}
+input{width:100%;padding:12px;border-radius:20px;border:1px solid #ddd;margin-top:8px}
+.publish{background:#1877F2;color:white;border:none;width:100%;padding:12px;border-radius:20px;font-weight:bold;margin-top:8px;font-size:16px}
+</style>
+</head>
+<body>
+
+<div class="top">
+  <div class="logo">VYR<span>ONEX</span></div>
+  <button onclick="alert('Profil bientôt !')">Mon Profil</button>
+</div>
+
+<div class="wrap">
+
+  <!-- PUBLIER -->
+  <div class="card">
+    <div class="profil"><div class="ava" style="background:#1877F2">C</div><div><div class="name">Chris Haba</div><div class="time">Conakry, Guinée</div></div></div>
+    <input id="newPost" placeholder="Quoi de neuf, Chris ?">
+    <button class="publish" onclick="publier()">+ Publier</button>
+  </div>
+
+  <!-- POST 1 -->
+  <div class="card">
+    <div class="profil"><div class="ava" style="background:#FF6B6B">M</div><div><div class="name">Maya Diallo</div><div class="time">Il y a 2h • Conakry</div></div></div>
+    <p>Super journée à Conakry ! ☀️ Qui est là ? #Vyronex</p>
+    <img class="post-img" src="https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=600">
+    <div class="actions">
+      <button onclick="like(this)">❤️ J'aime <span>124</span></button>
+      <button onclick="alert('Commentaires bientôt !')">💬 Commenter</button>
+      <button>↗️ Partager</button>
+    </div>
+  </div>
+
+  <!-- POST 2 -->
+  <div class="card">
+    <div class="profil"><div class="ava" style="background:#00C853">I</div><div><div class="name">Ibrahima Barry</div><div class="time">Il y a 4h</div></div></div>
+    <p>Nouveau projet Vyronex-Social en cours... 🔥 Restez branchés !</p>
+    <div class="actions">
+      <button onclick="like(this)">❤️ J'aime <span>89</span></button>
+      <button onclick="alert('Commentaires bientôt !')">💬 Commenter</button>
+      <button>↗️ Partager</button>
+    </div>
+  </div>
+
+  <!-- POST 3 -->
+  <div class="card">
+    <div class="profil"><div class="ava" style="background:#9B59B6">A</div><div><div class="name">Aïssatou Camara</div><div class="time">Il y a 6h</div></div></div>
+    <p>Bienvenue à tous sur Vyronex ! La meilleure appli de Guinée 🇬🇳</p>
+    <img class="post-img" src="https://images.unsplash.com/photo-1522202176988-66273c2fd55f?w=600">
+    <div class="actions">
+      <button onclick="like(this)">❤️ J'aime <span>256</span></button>
+      <button onclick="alert('Commentaires bientôt !')">💬 Commenter</button>
+      <button>↗️ Partager</button>
+    </div>
+  </div>
+
+  <div id="mesPosts"></div>
+
+</div>
+
+<script>
+function like(btn){
+  let span = btn.querySelector('span');
+  let n = parseInt(span.innerText);
+  if(btn.classList.contains('liked')){ span.innerText = n-1; btn.classList.remove('liked'); }
+  else{ span.innerText = n+1; btn.classList.add('liked'); }
+}
+function publier(){
+  let texte = document.getElementById('newPost').value;
+  if(!texte){ alert('Écris quelque chose d\'abord !'); return; }
+  let div = document.createElement('div');
+  div.className='card';
+  div.innerHTML = '<div class="profil"><div class="ava" style="background:#1877F2">C</div><div><div class="name">Chris Haba</div><div class="time">À l\'instant</div></div></div><p>'+texte+'</p><div class="actions"><button onclick="like(this)">❤️ J\'aime <span>0</span></button><button>💬 Commenter</button><button>↗️ Partager</button></div>';
+  document.getElementById('mesPosts').prepend(div);
+  document.getElementById('newPost').value='';
+  alert('Publié ! 🎉');
+}
+</script>
+</body>
+</html>
